@@ -1,21 +1,19 @@
 <?php
 
+declare(strict_types=1);
 
-class Robot1 implements IRobot
+/**
+ * Robot1 - конкретный тип робота с предустановленными характеристиками.
+ */
+readonly class Robot1 extends AbstractRobot
 {
-
-    public function getWeight()
+    public function __construct()
     {
-        return 10;
-    }
-
-    public function getSpeed()
-    {
-        return 104;
-    }
-
-    public function getHeight()
-    {
-        return 1000;
+        parent::__construct(
+            type: 'robot1',
+            weight: 10.0,
+            speed: 104.0,
+            height: 1000.0,
+        );
     }
 }

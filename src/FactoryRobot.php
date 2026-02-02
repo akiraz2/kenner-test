@@ -1,77 +1,52 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- * Class FactoryRobot
+ * FactoryRobot - создает роботов по типу через клонирование прототипа.
+ * Идентификация по getType() вместо class name: позволяет создавать типы динамически.
  */
 class FactoryRobot
 {
-    /**
-     * @var array IRobot
-     */
-    protected $types = [];
+    /** type => prototype */
+    private array $types = [];
 
-    /**
-     * @param $robot
-     */
-    public function addType(IRobot $robot)
+    public function addType(IRobot $robot): void
     {
-        array_push($this->types, ($robot));
+        $this->types[$robot->getType()] = $robot;
     }
 
-    /**
-     *
-     * @return array
-     */
-    public function getTypes()
+    public function getTypes(): array
     {
         return $this->types;
     }
 
-//    public function createMergeRobot($count) {
-//
-//    }
-
-    public function __call($name, $arguments)
+    /**
+     * @param positive-int $count
+     * @return array<int, IRobot>
+     */
+    public function create(string $type, int $count = 1): array
     {
-        if (substr($name, 0, 6) === 'create') {
-            $robotName = substr($name, 6);
-            $found = $this->findType($robotName);
-            $count = +$arguments[0];
-            if (!is_integer($count) || $count <= 0) {
-                throw new InvalidArgumentException('Wrong count number');
-            }
-            return $this->cloneRobot($found, $count);
+        if ($count <= 0) {
+            throw new \InvalidArgumentException('Count must be positive');
         }
+
+        $prototype = $this->types[$type]
+            ?? throw new NotSupportedRobotException("Type '$type' not registered");
+
+        return $this->cloneRobot($prototype, $count);
     }
 
     /**
-     * Just multi clone robot
-     * @param $robot
-     * @param $count
-     * @return array
+     * @param positive-int $count
+     * @return array<int, IRobot>
      */
-    protected function cloneRobot($robot, $count)
+    private function cloneRobot(IRobot $prototype, int $count): array
     {
-        $arrayRobots = [];
+        $robots = [];
         for ($i = 0; $i < $count; $i++) {
-            array_push($arrayRobots, clone $robot);
+            $robots[] = clone $prototype;
         }
-        return $arrayRobots;
-    }
-
-    /**
-     * Search Robot in our types
-     * @param $robotName
-     * @return mixed
-     * @throws NotSupportedRobotException
-     */
-    protected function findType($robotName)
-    {
-        foreach ($this->types as $type) {
-            if (get_class($type) === $robotName) {
-                return $type;
-            }
-        }
-        throw new NotSupportedRobotException();
+        return $robots;
     }
 }

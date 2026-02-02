@@ -1,54 +1,73 @@
 <?php
 
+declare(strict_types=1);
+
 /**
- * Class MergeRobot
+ * MergeRobot - Composite: объединяет несколько IRobot в один.
+ * - Скорость = min (ограничение самого медленного)
+ * - Вес/высота = sum (сумма всех компонентов)
  */
-class MergeRobot implements IRobot
+class MergeRobot implements IMergeRobot
 {
-    /**
-     * @var array
-     */
-    protected $robots = [];
+    /** Для автогенерации уникальных типов */
+    private static int $instanceCounter = 0;
 
-    public function addRobot($robots)
-    {
-        $robotsToAdd = !is_array($robots) ? [$robots] : $robots;
-        array_push($this->robots, ...$robotsToAdd);
+    /** @var array<int, IRobot> */
+    private array $robots = [];
+
+    public function __construct(
+        private ?string $type = null,
+    ) {
+        if ($this->type === null) {
+            self::$instanceCounter++;
+            $this->type = 'merge_robot_' . self::$instanceCounter;
+        }
     }
 
-    public function getWeight()
+    public function getType(): string
     {
-        return $this->sumPropertyOfRobots('Weight');
+        return $this->type;
     }
 
-    public function getSpeed()
+    public function addRobot(IRobot|array $robots): void
     {
-        return min(array_map(function ($robot) {
-            return $robot->getSpeed();
-        }, $this->robots));
+        foreach (is_array($robots) ? $robots : [$robots] as $robot) {
+            $this->robots[] = $robot;
+        }
     }
 
-    public function getHeight()
+    public function getWeight(): float
     {
-        return array_sum(array_map(function ($robot) {
-            return $robot->getHeight();
-        }, $this->robots));
+        return $this->sumProperty('getWeight');
     }
 
-    /**
-     * Это работает быстрее, чем мап + сум
-     * @param $property
-     * @return int
-     */
-    protected function sumPropertyOfRobots($property): int
+    public function getSpeed(): float
     {
-        $sum = 0;
+        if ($this->robots === []) {
+            return 0.0;
+        }
+
+        return (float) min(array_map(
+            static fn(IRobot $robot): float => $robot->getSpeed(),
+            $this->robots,
+        ));
+    }
+
+    public function getHeight(): float
+    {
+        return $this->sumProperty('getHeight');
+    }
+
+    private function sumProperty(string $methodName): float
+    {
+        $sum = 0.0;
         foreach ($this->robots as $robot) {
-            $sum += $robot->{'get' . $property}();
+            $sum += $robot->$methodName();
         }
         return $sum;
     }
 
+    /** @return array<int, IRobot> */
     public function getRobots(): array
     {
         return $this->robots;

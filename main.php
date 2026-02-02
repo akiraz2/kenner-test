@@ -1,21 +1,33 @@
 <?php
-include('src/FactoryRobot.php');
-include('src/IRobot.php');
-include('src/Robot1.php');
-include('src/Robot2.php');
-include('src/MergeRobot.php');
-include('src/NotSupportedRobotException.php');
+
+declare(strict_types=1);
+
+// Автозагрузка классов (в реальном проекте лучше использовать autoload от composer)
+require_once __DIR__ . '/src/IRobot.php';
+require_once __DIR__ . '/src/IMergeRobot.php';
+require_once __DIR__ . '/src/AbstractRobot.php';
+require_once __DIR__ . '/src/NotSupportedRobotException.php';
+require_once __DIR__ . '/src/Robot1.php';
+require_once __DIR__ . '/src/Robot2.php';
+require_once __DIR__ . '/src/MergeRobot.php';
+require_once __DIR__ . '/src/FactoryRobot.php';
 
 $factory = new FactoryRobot();
 $factory->addType(new Robot1());
 $factory->addType(new Robot2());
 
-$mergeRobot = new MergeRobot();
-$mergeRobot->addRobot(new Robot1());
-$mergeRobot->addRobot($factory->createRobot2(2));
-$factory->addType($mergeRobot);
+$robots1 = $factory->create('robot1', 5);
+echo "Создано robot1: " . count($robots1) . " шт.\n";
 
-$res = ($factory->createMergeRobot(1))[0];
-var_dump($res->getWeight());
-var_dump($res->getHeight());
-var_dump($res->getSpeed());
+$robots2 = $factory->create('robot2', 2);
+echo "Создано robot2: " . count($robots2) . " шт.\n";
+
+$mergeRobot2 = new MergeRobot('super_merge');
+$mergeRobot2->addRobot(new Robot1());
+$mergeRobot2->addRobot(new Robot2());
+echo "MergeRobot2 тип: " . $mergeRobot2->getType() . "\n";
+$factory->addType($mergeRobot2);
+
+$superMerges = $factory->create('super_merge', 2);
+echo "Создано super_merge: " . count($superMerges) . " шт.\n";
+echo "Вес super_merge[0]: " . $superMerges[0]->getWeight() . " (10 + 12 = 22)\n";
